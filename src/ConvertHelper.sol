@@ -122,7 +122,10 @@ contract ConvertHelper is ReentrancyGuard {
         uint256 USDCrewards = HLP_PORTAL.getPendingRewards(
             HLP_PROTOCOL_REWARDER
         ) + HLP_PORTAL.getPendingRewards(HMX_PROTOCOL_REWARDER);
-        availableReward = IERC20(USDCE).balanceOf(address(this)) + USDCrewards;
+        availableReward =
+            IERC20(USDCE).balanceOf(address(this)) +
+            IERC20(USDCE).balanceOf(address(HLP_PORTAL_ADDRESS)) +
+            USDCrewards;
     }
 
     function getCurrentRewardsARB()
@@ -133,7 +136,10 @@ contract ConvertHelper is ReentrancyGuard {
         uint256 ARBrewards = HLP_PORTAL.getPendingRewards(
             HLP_STIP_REWARDER_ARB
         );
-        availableReward = IERC20(ARB).balanceOf(address(this)) + ARBrewards;
+        availableReward =
+            IERC20(ARB).balanceOf(address(this)) +
+            IERC20(ARB).balanceOf(address(HLP_PORTAL_ADDRESS)) +
+            ARBrewards;
     }
 
     // Send stuck tokens to the Portal with a 10% caller reward
