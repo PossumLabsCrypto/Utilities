@@ -122,6 +122,8 @@ contract ConvertHelper {
         if (_minReward == 0) revert InvalidAmount();
         if (reward < _minReward) revert InsufficientReward();
 
+        balance -= reward;
+
         IERC20(_token).safeTransfer(msg.sender, reward);
         IERC20(_token).safeTransfer(HLP_PORTAL_ADDRESS, balance);
     }
