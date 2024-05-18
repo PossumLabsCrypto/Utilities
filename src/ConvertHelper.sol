@@ -64,7 +64,7 @@ contract ConvertHelper {
         // Arbitrage sequence
         PSM.transferFrom(msg.sender, address(this), PSM_AMOUNT_FOR_CONVERT);
         HLP_PORTAL.claimRewardsHLPandHMX();
-        HLP_PORTAL.convert(address(USDCE), reward, block.timestamp);
+        HLP_PORTAL.convert(address(USDCE), 1, block.timestamp);
 
         // Transfer the rewards to the recipient
         USDCE.safeTransfer(_recipient, reward);
@@ -99,7 +99,7 @@ contract ConvertHelper {
         address principalTokenAddress = IV2_Portal(_portal).PRINCIPAL_TOKEN_ADDRESS();
         PSM.transferFrom(msg.sender, address(this), PSM_AMOUNT_FOR_CONVERT);
         V2_VIRTUAL_LP.collectProfitOfPortal(_portal);
-        V2_VIRTUAL_LP.convert(principalTokenAddress, address(this), reward, block.timestamp);
+        V2_VIRTUAL_LP.convert(principalTokenAddress, address(this), 1, block.timestamp);
 
         // Transfer the rewards to the recipient
         IERC20(principalTokenAddress).safeTransfer(_recipient, reward);
