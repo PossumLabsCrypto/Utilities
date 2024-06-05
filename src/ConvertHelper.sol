@@ -80,7 +80,12 @@ contract ConvertHelper {
 
         uint256 pendingRewards = V2_VIRTUAL_LP.getProfitOfPortal(_portal);
 
-        availableReward = pendingRewards + principalToken.balanceOf(address(this)) + principalToken.balanceOf(_portal);
+        uint256 availableReward_ETH = pendingRewards + address(this).balance + address(V2_VIRTUAL_LP_ADDRESS).balance;
+
+        uint256 availableReward_ERC20 =
+            pendingRewards + principalToken.balanceOf(address(this)) + principalToken.balanceOf(V2_VIRTUAL_LP_ADDRESS);
+
+        availableReward = (principalTokenAddress == address(0)) ? availableReward_ETH : availableReward_ERC20;
     }
 
     function V2_convert(address _portal, address _recipient, uint256 _minReceived) external {
