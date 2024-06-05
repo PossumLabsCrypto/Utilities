@@ -80,12 +80,8 @@ contract ConvertHelper {
 
         uint256 pendingRewards = V2_VIRTUAL_LP.getProfitOfPortal(_portal);
 
-        uint256 availableReward_ETH = pendingRewards + address(this).balance + address(V2_VIRTUAL_LP_ADDRESS).balance;
-
-        uint256 availableReward_ERC20 =
+        availableReward =
             pendingRewards + principalToken.balanceOf(address(this)) + principalToken.balanceOf(V2_VIRTUAL_LP_ADDRESS);
-
-        availableReward = (principalTokenAddress == address(0)) ? availableReward_ETH : availableReward_ERC20;
     }
 
     function V2_convert(address _portal, address _recipient, uint256 _minReceived) external {
@@ -103,19 +99,15 @@ contract ConvertHelper {
 
         // Arbitrage sequence
         address principalTokenAddress = IV2_Portal(_portal).PRINCIPAL_TOKEN_ADDRESS();
+        IERC20 principalToken = (principalTokenAddress == address(0)) ? WETH : IERC20(principalTokenAddress);
+
         PSM.transferFrom(msg.sender, address(this), PSM_AMOUNT_FOR_CONVERT);
+
         V2_VIRTUAL_LP.collectProfitOfPortal(_portal);
-        V2_VIRTUAL_LP.convert(principalTokenAddress, address(this), 1, block.timestamp);
+        V2_VIRTUAL_LP.convert(address(principalToken), address(this), 1, block.timestamp);
 
         // Transfer the rewards to the recipient
-        if (principalTokenAddress == address(0)) {
-            (bool sent,) = payable(_recipient).call{value: reward}("");
-            if (!sent) {
-                revert FailedToSendNativeToken();
-            }
-        } else {
-            IERC20(principalTokenAddress).safeTransfer(_recipient, reward);
-        }
+        principalToken.safeTransfer(_recipient, reward);
     }
 
     ///////////////////////////////////////
