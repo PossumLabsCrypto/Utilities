@@ -11,6 +11,7 @@ error InsufficientBalance();
 error InvalidAddress();
 error InvalidAmount();
 error InsufficientReward();
+error FailedToSendNativeToken();
 
 /// @title ConvertHelper for PortalsV1 and V2 on Arbitrum
 /// @author Possum Labs
@@ -102,7 +103,14 @@ contract ConvertHelper {
         V2_VIRTUAL_LP.convert(principalTokenAddress, address(this), 1, block.timestamp);
 
         // Transfer the rewards to the recipient
-        IERC20(principalTokenAddress).safeTransfer(_recipient, reward);
+        if (principalTokenAddress == address(0)) {
+            (bool sent,) = payable(_recipient).call{value: reward}("");
+            if (!sent) {
+                revert FailedToSendNativeToken();
+            }
+        } else {
+            IERC20(principalTokenAddress).safeTransfer(_recipient, reward);
+        }
     }
 
     ///////////////////////////////////////
