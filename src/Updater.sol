@@ -7,7 +7,7 @@ import {IV2_Portal} from "./interfaces/IV2_Portal.sol";
 /// @title Updater contract to conveniently update maxLockDuration of all Portals
 /// @author Possum Labs
 /// @notice This contract extends the maxLockDuration of all Portals
-contract ConvertHelper {
+contract Updater {
     constructor() {}
 
     // Portal V1 related variables
