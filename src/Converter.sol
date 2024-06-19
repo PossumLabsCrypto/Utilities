@@ -216,7 +216,7 @@ contract Converter {
     /// @dev Get the expected arbitrage token amount and Portal address to interact with
     /// @dev Calculate the reward for the executor
     /// @dev Update the order information, execute the arbitrage and send tokens to executor and depositor
-    function executeArbitrage(uint256 _orderID) external {
+    function executeArbitrage(address _recipient, uint256 _orderID) external {
         // check the arbitrage condition
         (bool canExecute, address portal, uint256 amountReceived) = checkArbitrage(_orderID);
         if (!canExecute) revert InsufficientReward();
@@ -236,7 +236,7 @@ contract Converter {
         uint256 arbitrageAmount = amountReceived - executorReward;
 
         // Send tokens to depositor and executor
-        IERC20(order.tokenRequested).safeTransfer(msg.sender, executorReward);
+        IERC20(order.tokenRequested).safeTransfer(_recipient, executorReward);
         IERC20(order.tokenRequested).safeTransfer(order.depositor, arbitrageAmount);
 
         // Emit event with updated Order information and execution of arbitrage
