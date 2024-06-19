@@ -1,0 +1,1 @@
+just change .envExample to .env and add what is needed.
