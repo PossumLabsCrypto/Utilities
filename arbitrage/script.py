@@ -79,7 +79,7 @@ data = response.json()
 
 PSM_price = 100000 * float(data[PSM])
 if PSM_price == 0:
-    PSM_price = 105  # 100K psm price in USD
+    PSM_price = float(os.getenv("PSMPRICE"))  # Price of 100K PSM token
 
 profit = float(os.getenv("PROFIT"))  # Profit that expected
 total = PSM_price + profit
