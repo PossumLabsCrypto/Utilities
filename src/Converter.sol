@@ -145,15 +145,16 @@ contract Converter {
     function decreaseOrder(uint256 _orderID, uint256 _amount) external {
         // input validation - only the depositor can decrease the order
         Order storage order = orders[_orderID];
+        uint256 amount = _amount;
         if (msg.sender != order.depositor) revert NotDepositor();
-        if (_amount == 0 || _amount % PSM_AMOUNT_FOR_CONVERT > 0) revert InvalidAmount();
-        if (_amount > order.psmDeposit) revert InsufficientBalance();
+        if (amount == 0 || amount % PSM_AMOUNT_FOR_CONVERT > 0) revert InvalidAmount();
+        if (amount > order.psmDeposit) amount = order.psmDeposit;
 
         // Decrease order amount
-        order.psmDeposit -= _amount;
+        order.psmDeposit -= amount;
 
         // Transfer withdrawn tokens to depositor
-        PSM.transfer(msg.sender, _amount);
+        PSM.transfer(msg.sender, amount);
 
         // emit event that the order was updated
         emit OrderUpdated(_orderID, order);
