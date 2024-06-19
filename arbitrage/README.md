@@ -1,6 +1,26 @@
-**just change .envExample to .env and add what is needed.**
+# .ENV file
 
-## for running it every two hours:
+just change .envExample to .env and add what is needed.
+
+# The following packages are needed:
+
+1. **web3.py**: This is the official Ethereum Python library, allowing interaction with the Ethereum blockchain.
+
+    ```bash
+   pip install web3
+    ```
+2. **python-dotenv**: A module to read key-value pairs from a.env file.
+
+   ```bash
+   pip install python-dotenv
+    ```
+3. **requests**: A popular HTTP library for making requests to web services.
+
+   ```bash
+   pip install requests
+    ```
+
+# Crontab for running it every two hours:
 
 Using `crontab` in Windows Subsystem for Linux (WSL) is straightforward. Here’s how you can set up and use `crontab` in WSL:
 
