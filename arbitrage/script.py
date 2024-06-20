@@ -87,16 +87,16 @@ print(f"100K psm price: {PSM_price:.3f}, PRICE + PROFIT = total: {total:.3f}")
 
 # ----------------------------------------------------------------------
 
+current_directory = os.path.dirname(__file__)  # Get the current directory of the script
+converter_path = os.path.join(current_directory, "Converter.json")
+psm_path = os.path.join(current_directory, "psm.json")
+
 # Get contracts functions
-with open(
-    "/home/ubuntu/Utilities/arbitrage/Converter.json",  # ADD PATH TO Converter.json
-    "r",
-) as abi_file:
+with open(converter_path, "r") as abi_file:
     contract_abi = json.load(abi_file)
-with open(
-    "/home/ubuntu/Utilities/arbitrage/psm.json", "r"  # ADD PATH TO psm.json
-) as abi_file:
+with open(psm_path, "r") as abi_file:
     psm_abi = json.load(abi_file)
+
 account = w3.eth.account.from_key(private_key)
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 functions = contract.functions
