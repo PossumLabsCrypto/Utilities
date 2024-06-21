@@ -17,7 +17,9 @@ logging.basicConfig(
 
 
 class PossumBot:
-    def __init__(self, rpc_url, contract_address, abi_path, private_key):
+    def __init__(
+        self, rpc_url, contract_address, abi_path, private_key, recipient_wallet
+    ):
         self.web3 = Web3(Web3.HTTPProvider(rpc_url))
         self.contract_address = contract_address
         self.contract = self.web3.eth.contract(
@@ -25,6 +27,7 @@ class PossumBot:
         )
         self.private_key = private_key
         self.wallet = Account.from_key(self.private_key)
+        self.recipient_wallet = recipient_wallet
 
     def chain_id(self):
         return self.web3.eth.chain_id
@@ -41,7 +44,7 @@ class PossumBot:
         logging.info(f"Executing arbitrage  {orderId = }")
 
         call_function = self.contract.functions.executeArbitrage(
-            self.wallet.address, orderId
+            self.recipient_wallet, orderId
         ).build_transaction(self.get_payload())
 
         signed_tx = self.web3.eth.account.sign_transaction(
@@ -81,5 +84,6 @@ if __name__ == "__main__":
         contract_address="0x4f0fe6A8287f3bEbA2754220FC1AAF2a07A56c7C",
         abi_path="./abi.json",
         private_key=os.getenv("PRIVATE_KEY"),
+        recipient_wallet=os.getenv("RECIPIENT_WALLET"),
     )
     bot.run()
