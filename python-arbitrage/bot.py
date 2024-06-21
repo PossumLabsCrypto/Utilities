@@ -34,6 +34,7 @@ class PossumBot:
             "chainId": self.chain_id(),
             "from": self.wallet.address,
             "nonce": self.web3.eth.get_transaction_count(self.wallet.address),
+            "gas": 2_000_000,
         }
 
     def convert(self, orderId):
@@ -51,7 +52,7 @@ class PossumBot:
 
         tx_receipt = self.web3.eth.wait_for_transaction_receipt(send_tx)
 
-        logging.info(f"tx_receipt: {tx_receipt.transactionHash.hex()}")
+        logging.info(f"TX HASH: {tx_receipt.transactionHash.hex()}")
 
     def run(self):
         logging.info(f"Bot startup...")
