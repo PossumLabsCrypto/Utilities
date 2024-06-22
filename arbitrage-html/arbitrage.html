@@ -144,7 +144,7 @@
             const saveButton = document.getElementById('saveButton');
             saveButton.style.display = 'none';
             const saveMessage = document.createElement('p');
-            saveMessage.textContent = 'Saved, for saving new inputs, please refresh the page';
+            saveMessage.textContent = 'Saved, for saving new inputs, please refresh the page.';
             saveButton.parentNode.replaceChild(saveMessage, saveButton);
         }
 
@@ -187,6 +187,7 @@
                             <p>Portal: ${result_checkArbitrage.portal}</p>
                             <p>Amount Received: ${result_checkArbitrage.amountReceived}</p>
                             <p>Amount expected: ${result_order.minReceivedPer100kPSM}</p>
+                            <p>-------------------------------------------------------------------------</p>
                             <div id="orderStatus${i}" style="margin-top: 10px;"></div>
                         `;
                         ordersDiv.appendChild(orderDiv); // Append order details to UI
