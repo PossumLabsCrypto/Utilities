@@ -124,7 +124,6 @@
 
             // Clear private key input field
             document.getElementById('privateKey').value = 'private key saved.';
-            // alert('Private Key saved.');
 
             // Initialize web3 with selected RPC provider
             web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
@@ -145,9 +144,13 @@
                 fetchExecutableOrders();
                 startCountdown(refreshTimer / 1000);
             }, refreshTimer);
-
-            // Remove the Save button after settings are saved
-            document.getElementById('saveButton').style.display = 'none';
+            
+            // Replace the Save button with a message
+            const saveButton = document.getElementById('saveButton');
+            saveButton.style.display = 'none';
+            const saveMessage = document.createElement('p');
+            saveMessage.textContent = 'Saved, for saving new inputs, please refresh the page';
+            saveButton.parentNode.replaceChild(saveMessage, saveButton);
         }
 
         // Function to start countdown timer
@@ -178,18 +181,21 @@
                     const result = await contract.methods.checkArbitrage(i).call();
                     console.log(`Order ${i} - Result:`, result); // Debugging info
 
-                    // Create HTML elements to display order details
-                    const orderDiv = document.createElement('div');
-                    orderDiv.innerHTML = `
-                        <p>Order ID: ${i}</p>
-                        <p>Can Execute: ${result.canExecute}</p>
-                        <p>Portal: ${result.portal}</p>
-                        <p>Amount Received: ${result.amountReceived}</p>
-                        <button onclick="executeOrder(${i}, this)">Execute</button>
-                        <div id="orderStatus${i}" style="margin-top: 10px;"></div>
-                    `;
-                    ordersDiv.appendChild(orderDiv); // Append order details to UI
+                    // filter orders
+                    if (result.amountReceived > 0) {
+                        // Create HTML elements to display order details
+                        const orderDiv = document.createElement('div');
+                        orderDiv.innerHTML = `
+                            <p>Order ID: ${i}</p>
+                            <p>Can Execute: ${result.canExecute}</p>
+                            <p>Portal: ${result.portal}</p>
+                            <p>Amount Received: ${result.amountReceived}</p>
+                            <button onclick="executeOrder(${i}, this)">Execute</button>
+                            <div id="orderStatus${i}" style="margin-top: 10px;"></div>
+                        `;
+                        ordersDiv.appendChild(orderDiv); // Append order details to UI
                 }
+            }
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
