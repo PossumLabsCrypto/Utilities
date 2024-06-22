@@ -52,7 +52,7 @@
     </div>
     
     <!-- Section to display executable orders -->
-    <h2>Executable Orders</h2>
+    <h2>Orders</h2>
     <div id="orders"></div>
 
     <script>
@@ -116,7 +116,6 @@
                 rpcUrl = "https://arbitrum-one.publicnode.com/";
             }
         
-
             // Log settings for debugging
             console.log('RPC URL:', rpcUrl);
             console.log('Private Key: [hidden]');
@@ -144,7 +143,7 @@
                 fetchExecutableOrders();
                 startCountdown(refreshTimer / 1000);
             }, refreshTimer);
-            
+
             // Replace the Save button with a message
             const saveButton = document.getElementById('saveButton');
             saveButton.style.display = 'none';
@@ -180,31 +179,31 @@
                 for (let i = 0; i < orderCount; i++) {
                     const result = await contract.methods.checkArbitrage(i).call();
                     console.log(`Order ${i} - Result:`, result); // Debugging info
-
-                    // filter orders
+                    
+                    // Filter and display executable orders
                     if (result.amountReceived > 0) {
                         // Create HTML elements to display order details
                         const orderDiv = document.createElement('div');
                         orderDiv.innerHTML = `
                             <p>Order ID: ${i}</p>
-                            <p>Can Execute: ${result.canExecute}</p>
                             <p>Portal: ${result.portal}</p>
                             <p>Amount Received: ${result.amountReceived}</p>
-                            <button onclick="executeOrder(${i}, this)">Execute</button>
                             <div id="orderStatus${i}" style="margin-top: 10px;"></div>
                         `;
                         ordersDiv.appendChild(orderDiv); // Append order details to UI
+                        if (result.canExecute) {
+                        executeOrder(i, orderDiv.querySelector(`#orderStatus${i}`)); // Execute the order
+                    }}
                 }
-            }
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
         }
 
         // Function to execute an arbitrage order
-        async function executeOrder(orderId, buttonElement) {
+        async function executeOrder(orderId, orderStatusDiv) {
             const senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
-            console.log("senderAddress;", senderAddress);
+            console.log("senderAddress:", senderAddress);
             const nonce = await web3.eth.getTransactionCount(senderAddress);
             const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
             const contract = new web3.eth.Contract(contractABI, contractAddress);  
@@ -223,22 +222,20 @@
             // Sign and send the transaction
             const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
             console.log(signedTransaction);
+            console.log(signedTransaction.rawTransaction);
             try {
                 const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
 
                 // Transaction succeeded, update UI with success message
-                const orderStatusDiv = buttonElement.nextElementSibling;
                 orderStatusDiv.innerHTML = `<p style="color: green;">Order executed successfully. Tx Hash: ${receipt.transactionHash}</p>`;
                 console.log('Transaction receipt:', receipt); // Log transaction receipt
 
-
             } catch (error) {
                 // Transaction failed, update UI with error message
-                const orderStatusDiv = buttonElement.nextElementSibling;
                 orderStatusDiv.innerHTML = `<p style="color: red;">Error executing order: ${error.message}</p>`;
                 console.error('Error executing order:', error); // Log any errors
             }
         }
     </script>
 </body>
-</html> 
+</html>
