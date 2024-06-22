@@ -216,7 +216,6 @@
                 await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
                     .on('receipt', receipt => {
                         console.log('Transaction receipt:', receipt); // Log transaction receipt
-                        fetchExecutableOrders(); // Fetch updated list of orders
                     });
             } catch (error) {
                 console.error('Error executing order:', error); // Log any errors
