@@ -66,11 +66,7 @@
         
         // Arbitrage contract details
         const contractAddress = '0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c';
-        const contractABI = [
-            {"inputs":[],"name":"orderIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"orderID","type":"uint256"}],"name":"checkArbitrage","outputs":[{"internalType":"bool","name":"canExecute","type":"bool"},{"internalType":"address","name":"portal","type":"address"},{"internalType":"uint256","name":"amountReceived","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"_recipient","type":"address"},{"internalType":"uint256","name":"_orderID","type":"uint256"}],"name":"executeArbitrage","outputs":[],"stateMutability":"nonpayable","type":"function"}
-        ];
+        const contractABI = [{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"orders","outputs":[{"name":"depositor","type":"address"},{"name":"tokenRequested","type":"address"},{"name":"minReceivedPer100kPSM","type":"uint256"},{"name":"psmDeposit","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"name":"orderIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"orderID","type":"uint256"}],"name":"checkArbitrage","outputs":[{"internalType":"bool","name":"canExecute","type":"bool"},{"internalType":"address","name":"portal","type":"address"},{"internalType":"uint256","name":"amountReceived","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_recipient","type":"address"},{"internalType":"uint256","name":"_orderID","type":"uint256"}],"name":"executeArbitrage","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
         // Event listener for Save button
         document.getElementById('saveButton').addEventListener('click', saveSettings);
@@ -177,21 +173,24 @@
 
                 // Loop through each order and display details
                 for (let i = 0; i < orderCount; i++) {
-                    const result = await contract.methods.checkArbitrage(i).call();
-                    console.log(`Order ${i} - Result:`, result); // Debugging info
+                    const result_order = await contract.methods.orders(i).call();
+                    console.log(`Order ${i} - Result:`, result_order); // Debugging info
                     
                     // Filter and display executable orders
-                    if (result.amountReceived > 0) {
+                    if (result_order.psmDeposit > 0) {
+                        const result_checkArbitrage = await contract.methods.checkArbitrage(i).call();
+                        console.log(`Order ${i} - Result:`, result_checkArbitrage); // Debugging info
                         // Create HTML elements to display order details
                         const orderDiv = document.createElement('div');
                         orderDiv.innerHTML = `
                             <p>Order ID: ${i}</p>
-                            <p>Portal: ${result.portal}</p>
-                            <p>Amount Received: ${result.amountReceived}</p>
+                            <p>Portal: ${result_checkArbitrage.portal}</p>
+                            <p>Amount Received: ${result_checkArbitrage.amountReceived}</p>
+                            <p>Amount expected: ${result_order.minReceivedPer100kPSM}</p>
                             <div id="orderStatus${i}" style="margin-top: 10px;"></div>
                         `;
                         ordersDiv.appendChild(orderDiv); // Append order details to UI
-                        if (result.canExecute) {
+                        if (result_checkArbitrage.canExecute) {
                         executeOrder(i, orderDiv.querySelector(`#orderStatus${i}`)); // Execute the order
                     }}
                 }
