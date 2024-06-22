@@ -8,508 +8,218 @@
 <body>
     <h1>Arbitrage Executor</h1>
     
+    <!-- Input field for recipient reward address -->
     <div>
-        <label for="apiKey">API Key (Infura):</label>
-        <input type="text" id="apiKey" required>
+        <label for="recipientRewardAddress">Recipient Reward Address:</label>
+        <input type="text" id="recipientRewardAddress" required>
     </div>
+    
+    <!-- Radio buttons for selecting RPC provider -->
+    <div>
+        <label>Select RPC Provider:</label><br>
+        <input type="radio" id="alchemy" name="rpcProvider" value="alchemy">
+        <label for="alchemy">Alchemy</label><br>
+        <input type="radio" id="infura" name="rpcProvider" value="infura">
+        <label for="infura">Infura</label><br>
+        <input type="radio" id="publicNode" name="rpcProvider" value="publicNode">
+        <label for="publicNode">Arbitrum Public Node</label>
+    </div>
+
+    <!-- Container for API key input, initially hidden -->
+    <div id="apiKeyContainer" style="display:none;">
+        <label for="apiKey">API Key:</label>
+        <input type="text" id="apiKey">
+    </div>
+
+    <!-- Input field for private key -->
     <div>
         <label for="privateKey">Private Key:</label>
         <input type="text" id="privateKey" required>
     </div>
+
+    <!-- Input field for auto-refresh timer in seconds -->
     <div>
         <label for="refreshTimer">Auto-refresh Timer (seconds):</label>
         <input type="number" id="refreshTimer" required>
     </div>
+
+    <!-- Button to save settings -->
     <button id="saveButton">Save</button>
 
+    <!-- Display countdown until next refresh -->
+    <div>
+        <p>Next search in <span id="countdown">0</span> seconds.</p>
+    </div>
+    
+    <!-- Section to display executable orders -->
     <h2>Executable Orders</h2>
     <div id="orders"></div>
 
     <script>
+        // Initialize variables
         let web3;
-        let apiKey, privateKey, refreshTimer;
-        const recipientAddress = 'YOUR_RECIPIENT_ADDRESS';
-        let contractAddress = '0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c';
-        let contractABI = [
-    {
-        "inputs": [],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "target",
-                "type": "address"
-            }
-        ],
-        "name": "AddressEmptyCode",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "AddressInsufficientBalance",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "CannotDecreaseFee",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "FailedInnerCall",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "InsufficientReward",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "InvalidAddress",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "InvalidAmount",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "NotDepositor",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
-        ],
-        "name": "SafeERC20FailedOperation",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "TimeNotPassed",
-        "type": "error"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "orderID",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "tokenReceived",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "ArbitrageExecuted",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "depositor",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "orderID",
-                "type": "uint256"
-            }
-        ],
-        "name": "OrderCreated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "orderID",
-                "type": "uint256"
-            },
-            {
-                "components": [
-                    {
-                        "internalType": "address",
-                        "name": "depositor",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "tokenRequested",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "minReceivedPer100kPSM",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "psmDeposit",
-                        "type": "uint256"
-                    }
-                ],
-                "indexed": false,
-                "internalType": "struct Converter.Order",
-                "name": "details",
-                "type": "tuple"
-            }
-        ],
-        "name": "OrderUpdated",
-        "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "ORDER_CREATION_FEE_PSM",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "PSM",
-        "outputs": [
-            {
-                "internalType": "contract IERC20",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "PSM_AMOUNT_FOR_CONVERT",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_orderID",
-                "type": "uint256"
-            }
-        ],
-        "name": "checkArbitrage",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "canExecute",
-                "type": "bool"
-            },
-            {
-                "internalType": "address",
-                "name": "portal",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amountReceived",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_tokenRequested",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_minReceivedPer100kPSM",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "createOrder",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_orderID",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "decreaseOrder",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "enabledTokens",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_recipient",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_orderID",
-                "type": "uint256"
-            }
-        ],
-        "name": "executeArbitrage",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "executionRewardPercent",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "feeUpdateTime",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_orderID",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "increaseOrder",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "orderIndex",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "orderID",
-                "type": "uint256"
-            }
-        ],
-        "name": "orders",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "depositor",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "tokenRequested",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "minReceivedPer100kPSM",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "psmDeposit",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "setApprovals",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "updateExecutionFee",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-]
+        let apiKey, refreshTimer, recipientRewardAddress, privateKey;
+        let rpcProvider;
+        let rpcUrl;
+        let countdownTimer;
+        let fetchOrdersInterval;
+        
+        // Arbitrage contract details
+        const contractAddress = '0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c';
+        const contractABI = [
+            {"inputs":[],"name":"orderIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"orderID","type":"uint256"}],"name":"checkArbitrage","outputs":[{"internalType":"bool","name":"canExecute","type":"bool"},{"internalType":"address","name":"portal","type":"address"},{"internalType":"uint256","name":"amountReceived","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"_recipient","type":"address"},{"internalType":"uint256","name":"_orderID","type":"uint256"}],"name":"executeArbitrage","outputs":[],"stateMutability":"nonpayable","type":"function"}
+        ];
 
+        // Event listener for Save button
         document.getElementById('saveButton').addEventListener('click', saveSettings);
 
-        function saveSettings() {
-            apiKey = document.getElementById('apiKey').value;
-            privateKey = document.getElementById('privateKey').value;
-            refreshTimer = document.getElementById('refreshTimer').value * 1000;
+        // Event listeners for RPC provider radio buttons
+        document.querySelectorAll('input[name="rpcProvider"]').forEach((elem) => {
+            elem.addEventListener("change", function(event) {
+                // Show/hide API key input based on selected RPC provider
+                let apiKeyContainer = document.getElementById('apiKeyContainer');
+                if (event.target.value === "publicNode") {
+                    apiKeyContainer.style.display = "none";
+                } else {
+                    apiKeyContainer.style.display = "block";
+                }
+            });
+        });
 
-            console.log('API Key:', apiKey);
-            console.log('Private Key:', privateKey);
+        // Function to save user settings
+        function saveSettings() {
+            // Retrieve values from input fields
+            recipientRewardAddress = document.getElementById('recipientRewardAddress').value;
+            privateKey = document.getElementById('privateKey').value;
+            
+            // Ensure private key starts with '0x'
+            if (!privateKey.startsWith('0x')) {
+                privateKey = '0x' + privateKey;
+            }
+            
+            // Calculate refresh timer in milliseconds
+            refreshTimer = document.getElementById('refreshTimer').value * 1000;
+            
+            // Determine selected RPC provider
+            rpcProvider = document.querySelector('input[name="rpcProvider"]:checked').value;
+
+            // Construct RPC URL based on selected provider
+            if (rpcProvider === "alchemy") {
+                apiKey = document.getElementById('apiKey').value;
+                rpcUrl = `https://arb-mainnet.g.alchemy.com/v2/${apiKey}`;
+            } else if (rpcProvider === "infura") {
+                apiKey = document.getElementById('apiKey').value;
+                rpcUrl = `https://arbitrum-mainnet.infura.io/v3/${apiKey}`;
+            } else if (rpcProvider === "publicNode") {
+                rpcUrl = "https://arbitrum-one.publicnode.com/";
+            }
+
+            // Log settings for debugging
+            console.log('RPC URL:', rpcUrl);
+            console.log('Private Key: [hidden]');
             console.log('Refresh Timer:', refreshTimer);
 
-            web3 = new Web3(new Web3.providers.HttpProvider(`https://arbitrum-mainnet.infura.io/v3/${apiKey}`));
+            // Clear private key input field
+            document.getElementById('privateKey').value = '';
+            alert('Private Key saved.');
 
+            // Initialize web3 with selected RPC provider
+            web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
+
+            // Fetch initial set of executable orders
             fetchExecutableOrders();
-            setInterval(fetchExecutableOrders, refreshTimer);
+
+            // Start countdown timer for auto-refresh
+            startCountdown(refreshTimer / 1000);
+
+            // Clear existing fetch interval if present
+            if (fetchOrdersInterval) {
+                clearInterval(fetchOrdersInterval);
+            }
+
+            // Set interval to fetch orders periodically
+            fetchOrdersInterval = setInterval(() => {
+                fetchExecutableOrders();
+                startCountdown(refreshTimer / 1000);
+            }, refreshTimer);
         }
 
+        // Function to start countdown timer
+        function startCountdown(duration) {
+            clearInterval(countdownTimer);
+            let timer = duration, seconds;
+            countdownTimer = setInterval(() => {
+                seconds = parseInt(timer, 10);
+                document.getElementById('countdown').textContent = seconds;
+                if (--timer < 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+        }
+
+        // Function to fetch executable orders from the contract
         async function fetchExecutableOrders() {
             const contract = new web3.eth.Contract(contractABI, contractAddress);
 
             try {
+                // Get the total number of orders
                 const orderCount = await contract.methods.orderIndex().call();
                 const ordersDiv = document.getElementById('orders');
-                ordersDiv.innerHTML = '';
+                ordersDiv.innerHTML = ''; // Clear previous orders
 
+                // Loop through each order and display details
                 for (let i = 0; i < orderCount; i++) {
                     const result = await contract.methods.checkArbitrage(i).call();
                     console.log(`Order ${i} - Result:`, result); // Debugging info
 
-                    // if (result.canExecute) {
-                        const orderDiv = document.createElement('div');
-                        orderDiv.innerHTML = `
-                            <p>Order ID: ${i}</p>
-                            <p>Can Execute: ${result.canExecute}</p>
-                            <p>Portal: ${result.portal}</p>
-                            <p>Amount Received: ${result.amountReceived}</p>
-                            <button onclick="executeOrder(${i})">Execute</button>
-                        `;
-                        ordersDiv.appendChild(orderDiv);
-                        console.log(`Order ${i} appended to ordersDiv`); // Debugging info
-                    // }
+                    // Create HTML elements to display order details
+                    const orderDiv = document.createElement('div');
+                    orderDiv.innerHTML = `
+                        <p>Order ID: ${i}</p>
+                        <p>Can Execute: ${result.canExecute}</p>
+                        <p>Portal: ${result.portal}</p>
+                        <p>Amount Received: ${result.amountReceived}</p>
+                        <button onclick="executeOrder(${i})">Execute</button>
+                    `;
+                    ordersDiv.appendChild(orderDiv); // Append order details to UI
                 }
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
         }
 
+        // Function to execute an arbitrage order
         async function executeOrder(orderId) {
-            const contract = new web3.eth.Contract(contractABI, contractAddress);
-            const data = contract.methods.executeArbitrage(recipientAddress, orderId).encodeABI();
+            const contract = new web3.eth.Contract(contractABI, contractAddress);  
+            const senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
+            const nonce = await web3.eth.getTransactionCount(senderAddress);
+            const data = contract.methods.executeArbitrage(recipientRewardAddress, orderId).encodeABI();
+            const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
 
+            // Transaction object to execute arbitrage
             const transaction = {
                 to: contractAddress,
-                data: data,
-                gas: 2000000
+                gasPrice: gasPrice,
+                gas: "21000", // Example gas limit, adjust as necessary
+                nonce: nonce,
+                value: web3.utils.toHex(0), // No value being sent with the transaction
+                data: "", // Data for the transaction
             };
 
             try {
+                // Sign and send the transaction
                 const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
                 await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
                     .on('receipt', receipt => {
-                        console.log('Transaction receipt:', receipt);
-                        fetchExecutableOrders();
+                        console.log('Transaction receipt:', receipt); // Log transaction receipt
+                        fetchExecutableOrders(); // Fetch updated list of orders
                     });
             } catch (error) {
-                console.error('Error executing order:', error);
+                console.error('Error executing order:', error); // Log any errors
             }
         }
     </script>
 </body>
-</html>
+</html> 
