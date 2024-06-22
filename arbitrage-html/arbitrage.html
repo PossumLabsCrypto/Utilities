@@ -115,6 +115,7 @@
             } else if (rpcProvider === "publicNode") {
                 rpcUrl = "https://arbitrum-one.publicnode.com/";
             }
+        
 
             // Log settings for debugging
             console.log('RPC URL:', rpcUrl);
@@ -192,25 +193,26 @@
 
         // Function to execute an arbitrage order
         async function executeOrder(orderId) {
-            const contract = new web3.eth.Contract(contractABI, contractAddress);  
             const senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
             const nonce = await web3.eth.getTransactionCount(senderAddress);
-            const data = contract.methods.executeArbitrage(recipientRewardAddress, orderId).encodeABI();
             const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
+            const contract = new web3.eth.Contract(contractABI, contractAddress);  
+            const data = contract.methods.executeArbitrage(recipientRewardAddress, orderId).encodeABI();
 
             // Transaction object to execute arbitrage
             const transaction = {
                 to: contractAddress,
                 gasPrice: gasPrice,
-                gas: "21000", // Example gas limit, adjust as necessary
+                gas: "2000000", // Example gas limit, adjust as necessary
                 nonce: nonce,
-                value: web3.utils.toHex(0), // No value being sent with the transaction
-                data: "", // Data for the transaction
+                value: '0', // No value being sent with the transaction
+                data: data, // Data for the transaction
             };
 
+            // Sign and send the transaction
+            const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
+            console.log(signedTransaction);
             try {
-                // Sign and send the transaction
-                const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
                 await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
                     .on('receipt', receipt => {
                         console.log('Transaction receipt:', receipt); // Log transaction receipt
