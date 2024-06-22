@@ -1,41 +1,65 @@
-# Arbitrage Executor
+## Arbitrage Executor
 
-This project provides a web interface to execute arbitrage operations on the Arbitrum blockchain. It allows users to interact with a smart contract deployed at a specific address (`0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c`) using Web3.js.
+Welcome to the Arbitrage Executor! This simple web application helps you automate arbitrage transactions on the Arbitrum network. Follow these steps to set it up and start using it.
 
-## Features
+### Setup Instructions
 
-- **Recipient Reward Address**: Input field to specify the address that will receive rewards from arbitrage executions.
-- **RPC Provider Selection**: Radio buttons to choose between different RPC providers (Alchemy, Infura, or Arbitrum Public Node).
-- **API Key**: Input field (displayed conditionally) to provide API keys required by certain RPC providers.
-- **Private Key**: Input field to enter the private key associated with the wallet that will sign and send transactions.
-- **Auto-refresh Timer**: Input field to set the interval (in seconds) for automatically fetching and updating the list of executable arbitrage orders.
-- **Save Button**: Saves the user settings (RPC provider, API key, refresh timer) and initializes the Web3 provider.
-- **Countdown Timer**: Displays the time remaining until the next automatic refresh.
-- **Executable Orders**: Displays the list of orders that can be executed, fetched from the smart contract.
-- **Execute Button**: Allows users to execute a selected arbitrage order by signing and sending a transaction to the contract.
+1. **Open the HTML File**
+   - Save the provided HTML code as a file named `arbitrage.html`.
+   - Open `arbitrage.html` in your web browser.
 
-## Usage
+2. **Input Required Information**
 
-1. **Setup**: Enter the recipient reward address, private key, select an RPC provider, and optionally enter an API key if required.
-2. **Save**: Click the "Save" button to store the settings and initialize the Web3 provider based on the selected RPC provider and API key.
-3. **Automatic Refresh**: The application will automatically fetch executable orders at the specified interval (`Auto-refresh Timer`) and display them.
-4. **Execution**: Click the "Execute" button next to an order to initiate an arbitrage transaction. Confirm the transaction using your wallet.
+   - **Recipient Reward Address**
+     - Enter the Ethereum address where rewards should be sent.
 
-## Development
+   - **RPC Provider**
+     - Choose an RPC provider (Alchemy, Infura, or Arbitrum Public Node).
+     - If you select Alchemy or Infura, an additional input field for the API Key will appear. Enter your API Key.
 
-### Prerequisites
+   - **Private Key**
+     - Enter your Ethereum wallet's private key. This will be used to sign transactions.
 
-- Web browser with Web3.js support.
-- Access to the Arbitrum network or chosen RPC provider (Alchemy, Infura, Arbitrum Public Node).
-- Private key associated with an Ethereum wallet for signing transactions.
+   - **Auto-refresh Timer**
+     - Set the auto-refresh timer in seconds. This determines how frequently the app checks for executable orders.
 
-### Libraries and Tools
+3. **Save Settings**
 
-- **Web3.js**: Library for interacting with the Ethereum blockchain.
-- **JavaScript**: Programming language used for frontend logic.
-- **HTML/CSS**: Structure and styling of the user interface.
+   - Click the "Save" button to store your settings and start the auto-refresh timer.
 
-### Deployment
+### How It Works
 
-- Host the `arbitrage.html` file on a web server or local environment accessible via a web browser.
-- Ensure the RPC provider (Alchemy, Infura, or Arbitrum Public Node) is accessible and properly configured with API keys if required.
+1. **Fetch Orders**
+   - The app will connect to the smart contract and retrieve the current orders.
+   - Orders that can be executed are displayed in the "Orders" section.
+
+2. **Execute Orders**
+   - If an order meets the arbitrage criteria, it will be executed automatically.
+   - The transaction status will be displayed under each order.
+
+### Important Notes
+
+- **Private Key Security**
+  - Ensure your private key is kept secure. Never share it with anyone.
+  - After saving, the private key input field will show "private key saved" for security reasons.
+
+- **Transaction Costs**
+  - Transactions require gas. Ensure your wallet has enough ETH to cover these costs.
+
+### Dependencies
+
+- **Web3.js**
+  - The app uses Web3.js to interact with the Ethereum blockchain. The Web3.js library is loaded from a CDN.
+
+### Troubleshooting
+
+- **Error Fetching Orders**
+  - If you see an error message while fetching orders, ensure your settings are correct and try again.
+  
+- **Transaction Failures**
+  - If a transaction fails, check the error message for details. Ensure you have enough gas and that the private key is correct.
+
+
+---
+
+Enjoy using the Arbitrage Executor! If you encounter any issues or have questions, feel free to reach out for support.
