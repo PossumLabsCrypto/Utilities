@@ -124,7 +124,7 @@
 
             // Clear private key input field
             document.getElementById('privateKey').value = '';
-            alert('Private Key saved.');
+            // alert('Private Key saved.');
 
             // Initialize web3 with selected RPC provider
             web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
@@ -182,7 +182,8 @@
                         <p>Can Execute: ${result.canExecute}</p>
                         <p>Portal: ${result.portal}</p>
                         <p>Amount Received: ${result.amountReceived}</p>
-                        <button onclick="executeOrder(${i})">Execute</button>
+                        <button onclick="executeOrder(${i}, this)">Execute</button>
+                        <div id="orderStatus${i}" style="margin-top: 10px;"></div>
                     `;
                     ordersDiv.appendChild(orderDiv); // Append order details to UI
                 }
@@ -192,8 +193,9 @@
         }
 
         // Function to execute an arbitrage order
-        async function executeOrder(orderId) {
+        async function executeOrder(orderId, buttonElement) {
             const senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
+            console.log("senderAddress;", senderAddress);
             const nonce = await web3.eth.getTransactionCount(senderAddress);
             const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
             const contract = new web3.eth.Contract(contractABI, contractAddress);  
@@ -213,11 +215,20 @@
             const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
             console.log(signedTransaction);
             try {
-                await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
-                    .on('receipt', receipt => {
-                        console.log('Transaction receipt:', receipt); // Log transaction receipt
-                    });
+                const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+
+                // Transaction succeeded, update UI with success message
+                const orderStatusDiv = buttonElement.nextElementSibling;
+                orderStatusDiv.innerHTML = `<p style="color: green;">Order executed successfully. Tx Hash: ${receipt.transactionHash}</p>`;
+                console.log('Transaction receipt:', receipt); // Log transaction receipt
+
+                // Fetch updated list of orders
+                fetchExecutableOrders();
+
             } catch (error) {
+                // Transaction failed, update UI with error message
+                const orderStatusDiv = buttonElement.nextElementSibling;
+                orderStatusDiv.innerHTML = `<p style="color: red;">Error executing order: ${error.message}</p>`;
                 console.error('Error executing order:', error); // Log any errors
             }
         }
