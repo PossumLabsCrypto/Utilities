@@ -187,8 +187,8 @@
                             <p>Portal: ${result_checkArbitrage.portal}</p>
                             <p>Amount Received: ${result_checkArbitrage.amountReceived}</p>
                             <p>Amount Expected: ${result_order.minReceivedPer100kPSM}</p>
-                            <p>-------------------------------------------------------------------------</p>
                             <div id="orderStatus${i}" style="margin-top: 10px;"></div>
+                            <p>-------------------------------------------------------------------------</p>
                         `;
                         ordersDiv.appendChild(orderDiv); // Append order details to UI
                         if (result_checkArbitrage.canExecute) {
