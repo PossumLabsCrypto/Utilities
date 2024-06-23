@@ -237,7 +237,7 @@
 
                 // Save transaction hash in the array and update the UI
                 transactionHashes.push(receipt.transactionHash);
-                updateTransactionHashesUI();
+                updateTransactionHashesUI(receipt.transactionHash);
             } catch (error) {
                 // Transaction failed, update UI with error message
                 orderStatusDiv.innerHTML = `<p style="color: red;">Error executing order: ${error.message}</p>`;
@@ -246,14 +246,14 @@
         }
 
         // Function to update the transaction hashes UI
-        function updateTransactionHashesUI() {
+        function updateTransactionHashesUI(hash) {
             const transactionHashesDiv = document.getElementById('transactionHashes');
-            transactionHashesDiv.innerHTML = ''; // Clear previous hashes
-            transactionHashes.forEach(hash => {
-                const hashDiv = document.createElement('div');
-                hashDiv.textContent = hash;
-                transactionHashesDiv.appendChild(hashDiv);
-            });
+            // transactionHashesDiv.innerHTML = ''; // Clear previous hashes
+            // transactionHashes.forEach(hash => {
+            const hashDiv = document.createElement('div');
+            hashDiv.textContent = hash;
+            transactionHashesDiv.appendChild(hashDiv);
+            // });
         }
     </script>
 </body>
