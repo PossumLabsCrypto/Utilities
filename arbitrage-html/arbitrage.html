@@ -51,6 +51,10 @@
         <p>Next search in <span id="countdown">0</span> seconds.</p>
     </div>
     
+    <!-- Section to display transaction hashes -->
+    <h3>Successful Transaction Hashes</h3>
+    <div id="transactionHashes"></div>
+
     <!-- Section to display executable orders -->
     <h2>Orders</h2>
     <div id="orders"></div>
@@ -63,6 +67,7 @@
         let rpcUrl;
         let countdownTimer;
         let fetchOrdersInterval;
+        let transactionHashes = [];
         
         // Arbitrage contract details
         const contractAddress = '0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c';
@@ -230,11 +235,25 @@
                 orderStatusDiv.innerHTML = `<p style="color: green;">Order executed successfully. Tx Hash: ${receipt.transactionHash}</p>`;
                 console.log('Transaction receipt:', receipt); // Log transaction receipt
 
+                // Save transaction hash in the array and update the UI
+                transactionHashes.push(receipt.transactionHash);
+                updateTransactionHashesUI();
             } catch (error) {
                 // Transaction failed, update UI with error message
                 orderStatusDiv.innerHTML = `<p style="color: red;">Error executing order: ${error.message}</p>`;
                 console.error('Error executing order:', error); // Log any errors
             }
+        }
+
+        // Function to update the transaction hashes UI
+        function updateTransactionHashesUI() {
+            const transactionHashesDiv = document.getElementById('transactionHashes');
+            transactionHashesDiv.innerHTML = ''; // Clear previous hashes
+            transactionHashes.forEach(hash => {
+                const hashDiv = document.createElement('div');
+                hashDiv.textContent = hash;
+                transactionHashesDiv.appendChild(hashDiv);
+            });
         }
     </script>
 </body>
