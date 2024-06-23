@@ -174,12 +174,12 @@
                 // Loop through each order and display details
                 for (let i = 0; i < orderCount; i++) {
                     const result_order = await contract.methods.orders(i).call();
-                    console.log(`Order ${i} - Result:`, result_order); // Debugging info
+                    console.log(`Order ${i} - Details:`, result_order); // Debugging info
                     
                     // Filter and display executable orders
                     if (result_order.psmDeposit > 0) {
                         const result_checkArbitrage = await contract.methods.checkArbitrage(i).call();
-                        console.log(`Order ${i} - Result:`, result_checkArbitrage); // Debugging info
+                        console.log(`Order ${i} - Check Arbitrage:`, result_checkArbitrage); // Debugging info
                         // Create HTML elements to display order details
                         const orderDiv = document.createElement('div');
                         orderDiv.innerHTML = `
