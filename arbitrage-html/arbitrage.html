@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Arbitrage Executor</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Arbitrage Executor (possumLabs.io)</h1>
+    
+    <!-- Input field for recipient reward address -->
+    <div>
+        <label for="recipientRewardAddress">Recipient Reward Address:</label>
+        <input type="text" id="recipientRewardAddress" required>
+    </div>
+    
+    <!-- Radio buttons for selecting RPC provider -->
+    <div>
+        <label>Select RPC Provider:</label><br>
+        <input type="radio" id="alchemy" name="rpcProvider" value="alchemy">
+        <label for="alchemy">Alchemy</label><br>
+        <input type="radio" id="infura" name="rpcProvider" value="infura">
+        <label for="infura">Infura</label><br>
+        <input type="radio" id="publicNode" name="rpcProvider" value="publicNode">
+        <label for="publicNode">Arbitrum Public Node</label>
+    </div>
+
+    <!-- Container for API key input, initially hidden -->
+    <div id="apiKeyContainer" style="display:none;">
+        <label for="apiKey">API Key:</label>
+        <input type="text" id="apiKey">
+    </div>
+
+    <!-- Input field for private key -->
+    <div>
+        <label for="privateKey">Private Key:</label>
+        <input type="text" id="privateKey" required>
+    </div>
+
+    <!-- Input field for auto-refresh timer in seconds -->
+    <div>
+        <label for="refreshTimer">Auto-refresh Timer (seconds):</label>
+        <input type="number" id="refreshTimer" required>
+    </div>
+
+    <!-- Button to save settings -->
+    <button id="saveButton">Save</button>
+
+    <!-- Display countdown until next refresh -->
+    <div>
+        <p>Next search in <span id="countdown">0</span> seconds.</p>
+    </div>
+    
+    <!-- Section to display transaction hashes -->
+    <h3>Successful Transaction Hashes</h3>
+    <div id="transactionHashes" style="color: green;"></div>
+
+    <!-- Section to display executable orders -->
+    <h2>Orders</h2>
+    <div id="orders"></div>
+
+    <script>
+        // Initialize variables
+        let web3;
+        let apiKey, refreshTimer, recipientRewardAddress, privateKey;
+        let rpcProvider;
+        let rpcUrl;
+        let countdownTimer;
+        let fetchOrdersInterval;
+        let transactionHashes = [];
+        
+        // Arbitrage contract details
+        const contractAddress = '0x4f0fe6a8287f3beba2754220fc1aaf2a07a56c7c';
+        const contractABI = [{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"orders","outputs":[{"name":"depositor","type":"address"},{"name":"tokenRequested","type":"address"},{"name":"minReceivedPer100kPSM","type":"uint256"},{"name":"psmDeposit","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"name":"orderIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"orderID","type":"uint256"}],"name":"checkArbitrage","outputs":[{"internalType":"bool","name":"canExecute","type":"bool"},{"internalType":"address","name":"portal","type":"address"},{"internalType":"uint256","name":"amountReceived","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_recipient","type":"address"},{"internalType":"uint256","name":"_orderID","type":"uint256"}],"name":"executeArbitrage","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+        // Event listener for Save button
+        document.getElementById('saveButton').addEventListener('click', saveSettings);
+
+        // Event listeners for RPC provider radio buttons
+        document.querySelectorAll('input[name="rpcProvider"]').forEach((elem) => {
+            elem.addEventListener("change", function(event) {
+                // Show/hide API key input based on selected RPC provider
+                let apiKeyContainer = document.getElementById('apiKeyContainer');
+                if (event.target.value === "publicNode") {
+                    apiKeyContainer.style.display = "none";
+                } else {
+                    apiKeyContainer.style.display = "block";
+                }
+            });
+        });
+
+        // Function to save user settings
+        function saveSettings() {
+            // Retrieve values from input fields
+            recipientRewardAddress = document.getElementById('recipientRewardAddress').value;
+            privateKey = document.getElementById('privateKey').value;
+            
+            // Ensure private key starts with '0x'
+            if (!privateKey.startsWith('0x')) {
+                privateKey = '0x' + privateKey;
+            }
+            
+            // Calculate refresh timer in milliseconds
+            refreshTimer = document.getElementById('refreshTimer').value * 1000;
+            
+            // Determine selected RPC provider
+            rpcProvider = document.querySelector('input[name="rpcProvider"]:checked').value;
+
+            // Construct RPC URL based on selected provider
+            if (rpcProvider === "alchemy") {
+                apiKey = document.getElementById('apiKey').value;
+                rpcUrl = `https://arb-mainnet.g.alchemy.com/v2/${apiKey}`;
+            } else if (rpcProvider === "infura") {
+                apiKey = document.getElementById('apiKey').value;
+                rpcUrl = `https://arbitrum-mainnet.infura.io/v3/${apiKey}`;
+            } else if (rpcProvider === "publicNode") {
+                rpcUrl = "https://arbitrum-one.publicnode.com/";
+            }
+        
+            // Log settings for debugging
+            console.log('RPC URL:', rpcUrl);
+            console.log('Private Key: [hidden]');
+            console.log('Refresh Timer:', refreshTimer);
+
+            // Clear private key input field
+            document.getElementById('privateKey').value = 'private key saved.';
+
+            // Initialize web3 with selected RPC provider
+            web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
+
+            // Fetch initial set of executable orders
+            fetchExecutableOrders();
+
+            // Start countdown timer for auto-refresh
+            startCountdown(refreshTimer / 1000);
+
+            // Clear existing fetch interval if present
+            if (fetchOrdersInterval) {
+                clearInterval(fetchOrdersInterval);
+            }
+
+            // Set interval to fetch orders periodically
+            fetchOrdersInterval = setInterval(() => {
+                fetchExecutableOrders();
+                startCountdown(refreshTimer / 1000);
+            }, refreshTimer);
+
+            // Replace the Save button with a message
+            const saveButton = document.getElementById('saveButton');
+            saveButton.style.display = 'none';
+            const saveMessage = document.createElement('p');
+            saveMessage.textContent = 'Saved, for saving new inputs, please refresh the page.';
+            saveButton.parentNode.replaceChild(saveMessage, saveButton);
+        }
+
+        // Function to start countdown timer
+        function startCountdown(duration) {
+            clearInterval(countdownTimer);
+            let timer = duration, seconds;
+            countdownTimer = setInterval(() => {
+                seconds = parseInt(timer, 10);
+                document.getElementById('countdown').textContent = seconds;
+                if (--timer < 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+        }
+
+        // Function to fetch executable orders from the contract
+        async function fetchExecutableOrders() {
+            const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+            try {
+                // Get the total number of orders
+                const orderCount = await contract.methods.orderIndex().call();
+                const ordersDiv = document.getElementById('orders');
+                ordersDiv.innerHTML = ''; // Clear previous orders
+
+                // Loop through each order and display details
+                for (let i = 0; i < orderCount; i++) {
+                    const result_order = await contract.methods.orders(i).call();
+                    console.log(`Order ${i} - Details:`, result_order); // Debugging info
+                    
+                    // Filter and display executable orders
+                    if (result_order.psmDeposit > 0) {
+                        const result_checkArbitrage = await contract.methods.checkArbitrage(i).call();
+                        console.log(`Order ${i} - Check Arbitrage:`, result_checkArbitrage); // Debugging info
+                        // Create HTML elements to display order details
+                        const orderDiv = document.createElement('div');
+                        orderDiv.innerHTML = `
+                            <p>Order ID: ${i}</p>
+                            <p>Portal: ${result_checkArbitrage.portal}</p>
+                            <p>Amount Received: ${result_checkArbitrage.amountReceived}</p>
+                            <p>Amount Expected: ${result_order.minReceivedPer100kPSM}</p>
+                            <div id="orderStatus${i}" style="margin-top: 10px;"></div>
+                            <p>-------------------------------------------------------------------------</p>
+                        `;
+                        ordersDiv.appendChild(orderDiv); // Append order details to UI
+                        if (result_checkArbitrage.canExecute) {
+                            executeOrder(i, orderDiv.querySelector(`#orderStatus${i}`)); // Execute the order
+                    }}
+                }
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            }
+        }
+
+        // Function to execute an arbitrage order
+        async function executeOrder(orderId, orderStatusDiv) {
+            const senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
+            console.log("senderAddress:", senderAddress);
+            const nonce = await web3.eth.getTransactionCount(senderAddress);
+            const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
+            const contract = new web3.eth.Contract(contractABI, contractAddress);  
+            const data = contract.methods.executeArbitrage(recipientRewardAddress, orderId).encodeABI();
+
+            // Transaction object to execute arbitrage
+            const transaction = {
+                to: contractAddress,
+                gasPrice: gasPrice,
+                gas: "2000000", // Example gas limit, adjust as necessary
+                nonce: nonce,
+                value: '0', // No value being sent with the transaction
+                data: data, // Data for the transaction
+            };
+
+            // Sign and send the transaction
+            const signedTransaction = await web3.eth.accounts.signTransaction(transaction, privateKey);
+            console.log(signedTransaction);
+            console.log(signedTransaction.rawTransaction);
+            try {
+                const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+
+                // Transaction succeeded, update UI with success message
+                orderStatusDiv.innerHTML = `<p style="color: green;">Order executed successfully. Tx Hash: ${receipt.transactionHash}</p>`;
+                console.log('Transaction receipt:', receipt); // Log transaction receipt
+
+                // Save transaction hash in the array and update the UI
+                transactionHashes.push(receipt.transactionHash);
+                updateTransactionHashesUI(receipt.transactionHash);
+            } catch (error) {
+                // Transaction failed, update UI with error message
+                orderStatusDiv.innerHTML = `<p style="color: red;">Error executing order: ${error.message}</p>`;
+                console.error('Error executing order:', error); // Log any errors
+            }
+        }
+
+        // Function to update the transaction hashes UI
+        function updateTransactionHashesUI(hash) {
+            const transactionHashesDiv = document.getElementById('transactionHashes');
+            // transactionHashesDiv.innerHTML = ''; // Clear previous hashes
+            // transactionHashes.forEach(hash => {
+            const hashDiv = document.createElement('div');
+            hashDiv.textContent = hash;
+            transactionHashesDiv.appendChild(hashDiv);
+            // });
+        }
+    </script>
+</body>
+</html>
