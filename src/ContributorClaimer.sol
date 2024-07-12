@@ -38,6 +38,9 @@ contract ContributorClaimer {
 
     bool public isDeactivated;
 
+    ////////////////////////////////
+    // Functions
+    ////////////////////////////////
     /// @notice Allows the beneficiary to claim all PSM in this contract if the interval has passed
     function claim() external {
         if (msg.sender != beneficiary) revert NotBeneficiary();
