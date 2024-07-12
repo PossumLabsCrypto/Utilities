@@ -23,6 +23,7 @@ contract ContributorClaimer {
     constructor(address _beneficiary, uint256 _claimInterval) {
         beneficiary = _beneficiary;
         claimInterval = _claimInterval;
+        nextClaimTime = block.timestamp + claimInterval;
     }
 
     ////////////////////////////////
@@ -65,11 +66,13 @@ contract ContributorClaimer {
     }
 
     /// @notice Allows the owner to deactivate the contract, rendering it useless
+    /// @dev When calling this function, remaining PSM tokens are sent to owner
     function deactivate() external {
         if (isDeactivated == true) revert Deactivated();
         if (msg.sender != OWNER) revert NotOwner();
 
         isDeactivated = true;
+        PSM.transfer(OWNER, PSM.balanceOf(address(this)));
     }
 
     /// @notice Allows anyone to withdraw any token if the contract is deactivated
