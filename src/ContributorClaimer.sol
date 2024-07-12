@@ -75,7 +75,11 @@ contract ContributorClaimer {
         if (msg.sender != OWNER) revert NotOwner();
 
         isDeactivated = true;
-        PSM.transfer(OWNER, PSM.balanceOf(address(this)));
+        uint256 balance = PSM.balanceOf(address(this));
+
+        if (balance > 0) {
+            PSM.transfer(OWNER, balance);
+        }
     }
 
     /// @notice Allows anyone to withdraw any token if the contract is deactivated
