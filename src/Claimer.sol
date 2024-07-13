@@ -10,7 +10,7 @@ error NotOwner();
 error IntervalNotComplete();
 error ZeroBalance();
 
-/// @title ContributorClaimer chunks PSM distributions to follow a specific cadence
+/// @title The Claimer chunks PSM distributions to follow a specific cadence
 /// @author Possum Labs
 /// @notice This contract collects PSM and allows the beneficiary to withdraw them in bulk once every so often
 /* The beneficiary is specified on deployment of this contract. 1 contract per beneficiary.
@@ -19,7 +19,7 @@ error ZeroBalance();
 /* The owner can deactivate the contract.
 /* When deactivated, anyone can withdraw any token from the contract.
 */
-contract ContributorClaimer {
+contract Claimer {
     constructor(address _beneficiary, uint256 _claimInterval) {
         beneficiary = _beneficiary;
         claimInterval = _claimInterval;
@@ -35,6 +35,9 @@ contract ContributorClaimer {
     address public beneficiary;
     uint256 public claimInterval;
     uint256 public nextClaimTime;
+
+    uint256 public lastClaimedAmount; // info only
+    uint256 public totalClaimedAmount; // info only
 
     bool public isDeactivated;
 
@@ -52,6 +55,9 @@ contract ContributorClaimer {
         uint256 balancePSM = PSM.balanceOf(address(this));
 
         if (balancePSM == 0) revert ZeroBalance();
+
+        lastClaimedAmount = balancePSM;
+        totalClaimedAmount += balancePSM;
 
         PSM.transfer(beneficiary, balancePSM);
     }
