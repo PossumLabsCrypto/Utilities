@@ -19,6 +19,7 @@ infura_api_key = os.getenv("infura_api_key")  # Creat account in Infura and get 
 w3 = Web3(Web3.HTTPProvider(f"https://arbitrum-mainnet.infura.io/v3/{infura_api_key}"))
 private_key = os.getenv("PRIVATEKEY")  # Your wallet Private Key
 account_address = os.getenv("ACCOUNT")  # Your Account Address
+Api = int(os.getenv("API"))
 
 psm_address = "0x17A8541B82BF67e10B0874284b4Ae66858cb1fd5"  # PSM token Address
 contract_address = (
@@ -32,12 +33,14 @@ WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
 WBTC = "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
 LINK = "0xf97f4df75117a78c1a5a0dbb814af92458539fb4"
 ARB = "0x912ce59144191c1204e64559fe8253a0e49e6548"
+
 Portal_USDCE = "0xE8EfFf304D01aC2D9BA256b602D736dB81f20984"  # USDCE portal Address
 Portal_USDC = "0x9167CFf02D6f55912011d6f498D98454227F4e16"
-Portal_ARB = "0x523a93037c47Ba173E9080FE8EBAeae834c24082"
-Portal_WBTC = "0x919B37b5f2f1DEd2a1f6230Bf41790e27b016609"
 Portal_WETH = "0xe771545aaDF6feC3815B982fe2294F7230C9c55b"
+Portal_WBTC = "0x919B37b5f2f1DEd2a1f6230Bf41790e27b016609"
 Portal_LINK = "0x51623b54753E07Ba9B3144Ba8bAB969D427982b6"
+Portal_ARB = "0x523a93037c47Ba173E9080FE8EBAeae834c24082"
+
 Portals = [
     {"name": "USDCE", "address": Portal_USDCE, "decimals": 6, "token": USDCE},
     {"name": "USDC", "address": Portal_USDC, "decimals": 6, "token": USDC},
@@ -49,37 +52,95 @@ Portals = [
 gas = 2500000
 decimal_18 = 10**18
 decimal_6 = 10**6
+PSM_price_1inch = 0
+PSMPriceDefiLama = 0
 # ------------------------------------------------------------------------
 
+if Api == 0:
+    # GET PRICES from 1inch
+    method = "get"
+    apiUrl = "https://api.1inch.dev/price/v1.1/42161"
+    requestOptions = {
+        "headers": {"Authorization": f"Bearer {BEARER}"},
+        "body": {
+            "tokens": [
+                f"{WETH}",
+                f"{WBTC}",
+                f"{LINK}",
+                f"{ARB}",
+                f"{USDCE}",
+                f"{USDC}",
+                f"{PSM}",
+            ],
+            "currency": "USD",
+        },
+        "params": {},
+    }
+    headers = requestOptions.get("headers", {})
+    body = requestOptions.get("body", {})
+    params = requestOptions.get("params", {})
+    response = requests.post(apiUrl, headers=headers, json=body, params=params)
+    data = response.json()
+    PSM_price_1inch = 100000 * float(data[PSM])
+else:
+    # GET PRICES from DefiLama
+    print("Using DefiLama")
+    PSMDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0x17a8541b82bf67e10b0874284b4ae66858cb1fd5?searchWidth=6h"
+    USDCEDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0xff970a61a04b1ca14834a43f5de4533ebddb5cc8?searchWidth=6h"
+    USDCDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0xaf88d065e77c8cc2239327c5edb3a432268e5831?searchWidth=6h"
+    WETHDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0x82af49447d8a07e3bd95bd0d56f35241523fbab1?searchWidth=6h"
+    WBTCDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f?searchWidth=6h"
+    LINKDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0xf97f4df75117a78c1a5a0dbb814af92458539fb4?searchWidth=6h"
+    ARBDefiLama = "https://coins.llama.fi/prices/current/arbitrum:0x912ce59144191c1204e64559fe8253a0e49e6548?searchWidth=6h"
 
-# GET PRICES from 1inch
-method = "get"
-apiUrl = "https://api.1inch.dev/price/v1.1/42161"
-requestOptions = {
-    "headers": {"Authorization": f"Bearer {BEARER}"},
-    "body": {
-        "tokens": [
-            f"{WETH}",
-            f"{WBTC}",
-            f"{LINK}",
-            f"{ARB}",
-            f"{USDCE}",
-            f"{USDC}",
-            f"{PSM}",
-        ],
-        "currency": "USD",
-    },
-    "params": {},
-}
-headers = requestOptions.get("headers", {})
-body = requestOptions.get("body", {})
-params = requestOptions.get("params", {})
-response = requests.post(apiUrl, headers=headers, json=body, params=params)
-data = response.json()
+    PSMResponse = requests.get(PSMDefiLama).json()
+    USDCEResponse = requests.get(USDCEDefiLama).json()
+    USDCResponse = requests.get(USDCDefiLama).json()
+    WETHResponse = requests.get(WETHDefiLama).json()
+    WBTCResponse = requests.get(WBTCDefiLama).json()
+    LINKResponse = requests.get(LINKDefiLama).json()
+    ARBResponse = requests.get(ARBDefiLama).json()
 
-PSM_price = 100000 * float(data[PSM])
-if PSM_price == 0:
+    PSMPriceDefiLama = 100000 * float(
+        PSMResponse["coins"]["arbitrum:0x17a8541b82bf67e10b0874284b4ae66858cb1fd5"][
+            "price"
+        ]
+    )
+    USDCEPriceDefiLama = USDCEResponse["coins"][
+        "arbitrum:0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"
+    ]["price"]
+    USDCPriceDefiLama = USDCResponse["coins"][
+        "arbitrum:0xaf88d065e77c8cc2239327c5edb3a432268e5831"
+    ]["price"]
+    WETHPriceDefiLama = WETHResponse["coins"][
+        "arbitrum:0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+    ]["price"]
+    WBTCPriceDefiLama = WBTCResponse["coins"][
+        "arbitrum:0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
+    ]["price"]
+    LINKPriceDefiLama = LINKResponse["coins"][
+        "arbitrum:0xf97f4df75117a78c1a5a0dbb814af92458539fb4"
+    ]["price"]
+    ARBPriceDefiLama = ARBResponse["coins"][
+        "arbitrum:0x912ce59144191c1204e64559fe8253a0e49e6548"
+    ]["price"]
+
+    data = {}
+    data["0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"] = USDCEPriceDefiLama
+    data["0xaf88d065e77c8cc2239327c5edb3a432268e5831"] = USDCPriceDefiLama
+    data["0x82af49447d8a07e3bd95bd0d56f35241523fbab1"] = WETHPriceDefiLama
+    data["0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"] = WBTCPriceDefiLama
+    data["0xf97f4df75117a78c1a5a0dbb814af92458539fb4"] = LINKPriceDefiLama
+    data["0x912ce59144191c1204e64559fe8253a0e49e6548"] = ARBPriceDefiLama
+
+
+# --------------------------------------------------------------------
+if (PSM_price_1inch == 0) & (PSMPriceDefiLama == 0):
     PSM_price = float(os.getenv("PSMPRICE"))  # Price of 100K PSM token
+elif PSM_price_1inch > PSMPriceDefiLama:
+    PSM_price = PSM_price_1inch
+else:
+    PSM_price = PSMPriceDefiLama
 
 profit = float(os.getenv("PROFIT"))  # Profit that expected
 total = PSM_price + profit
@@ -113,9 +174,10 @@ print(f"PSM Balance: {(balance/decimal_18):.2f}")
 
 # V1 reward
 v1_reward_usdce = functions.V1_getRewardsUSDCE().call()
-print(f"v1 reward USDCE: {(v1_reward_usdce / decimal_6):.2f}")
-if psm_functions.balanceOf(account_address).call() >= 10**23:
-    if (v1_reward_usdce / decimal_6) >= total:
+v1_reward_usdce = v1_reward_usdce / decimal_6
+print(f"v1 reward USDCE: {v1_reward_usdce:.2f}")
+if balance >= 10**23:
+    if v1_reward_usdce >= total:
         # Encode the function call
         transaction_data = functions.V1_convertUSDCE(
             account_address, 1
@@ -134,7 +196,8 @@ if psm_functions.balanceOf(account_address).call() >= 10**23:
             signed_transaction.rawTransaction
         )
         print(f"USDCE V1 Transaction sent. Hash: {transaction_hash.hex()}")
-        print(f"USDCE V1 PROFIT: {(v1_reward_usdce-PSM_price):.2f}")
+        print(f"USDCE V1 PROFIT: {(v1_reward_usdce - PSM_price):.2f}")
+        balance = psm_functions.balanceOf(account_address).call()
 # -------------------------------------------------------------------
 
 
@@ -148,7 +211,7 @@ for portal in Portals:
     worth = v2_reward * float(data[token]) / decimals
     print(f"v2 reward {name}: {(v2_reward / decimals):.4f}, worth: {worth:.4f}")
 
-    if psm_functions.balanceOf(account_address).call() >= 10**23:
+    if balance >= 10**23:
         if worth >= total:
             # Encode the function call
             transaction_data = functions.V2_convert(
@@ -169,4 +232,5 @@ for portal in Portals:
             )
             print(f"{name} Transaction sent. Hash: {transaction_hash.hex()}")
             print(f"{name} PROFIT: {(worth-PSM_price):.4f}")
+            balance = psm_functions.balanceOf(account_address).call()
 # -------------------------------------------------------------------
