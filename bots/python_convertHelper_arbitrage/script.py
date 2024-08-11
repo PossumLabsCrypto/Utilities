@@ -58,6 +58,7 @@ PSMPriceDefiLama = 0
 
 if Api == 0:
     # GET PRICES from 1inch
+    print("Using 1inch")
     method = "get"
     apiUrl = "https://api.1inch.dev/price/v1.1/42161"
     requestOptions = {
