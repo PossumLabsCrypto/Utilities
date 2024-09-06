@@ -11,7 +11,7 @@ error NotOwner();
 error IntervalNotComplete();
 error ZeroBalance();
 error NullAddress();
-error InvalidInterval();
+error InvalidCycle();
 error InvalidClaimTime();
 
 /// @title The Claimer contract bundles PSM distributions to follow a claiming cycle
@@ -26,7 +26,8 @@ error InvalidClaimTime();
 contract Claimer {
     constructor(address _beneficiary, uint256 _claimInterval, uint256 _firstClaimTime) {
         if (_beneficiary == address(0)) revert NullAddress();
-        if (_claimInterval < MIN_CYCLE_LENGTH) revert InvalidInterval();
+        if (_claimInterval < MIN_CYCLE_LENGTH) revert InvalidCycle();
+        if (_claimInterval > MAX_CYCLE_LENGTH) revert InvalidCycle();
         if (_firstClaimTime < block.timestamp) revert InvalidClaimTime();
 
         beneficiary = _beneficiary;
@@ -42,6 +43,7 @@ contract Claimer {
     IERC20 private constant PSM = IERC20(0x17A8541B82BF67e10B0874284b4Ae66858cb1fd5);
     address private constant OWNER = 0xAb845D09933f52af5642FC87Dd8FBbf553fd7B33;
     uint256 private constant MIN_CYCLE_LENGTH = 604800; // 7 days
+    uint256 private constant MAX_CYCLE_LENGTH = 7776000; // 90 days
 
     address public beneficiary;
     uint256 public claimInterval;
