@@ -8,7 +8,7 @@ error NotBeneficiary();
 error IsActive();
 error Deactivated();
 error NotOwner();
-error IntervalNotComplete();
+error ClaimWindowNotOpen();
 error ZeroBalance();
 error NullAddress();
 error InvalidCycle();
@@ -20,6 +20,7 @@ error InvalidClaimTime();
 /* The beneficiary is specified on deployment of this contract. 1 contract per beneficiary.
 /* The beneficiary can change the beneficiary address.
 /* The interval in which PSM can be withdrawn by the beneficiary is fixed at deployment.
+/* The claim window is 24 hours after which the beneficiary needs to wait to the next cycle.
 /* The owner can deactivate the contract, sending all PSM to the beneficiary.
 /* When deactivated, anyone can withdraw any token from the contract.
 */
@@ -31,8 +32,8 @@ contract Claimer {
         if (_firstClaimTime < block.timestamp) revert InvalidClaimTime();
 
         beneficiary = _beneficiary;
-        claimInterval = _claimInterval;
-        nextClaimTime = _firstClaimTime;
+        CLAIM_INTERVAL = _claimInterval;
+        FIRST_CLAIM_TIME = _firstClaimTime;
     }
 
     ////////////////////////////////
@@ -45,9 +46,11 @@ contract Claimer {
     uint256 private constant MIN_CYCLE_LENGTH = 604800; // 7 days
     uint256 private constant MAX_CYCLE_LENGTH = 7776000; // 90 days
 
+    uint256 public constant CLAIM_WINDOW = 86400; // 24 hours
+    uint256 public immutable CLAIM_INTERVAL;
+    uint256 public immutable FIRST_CLAIM_TIME;
+
     address public beneficiary;
-    uint256 public claimInterval;
-    uint256 public nextClaimTime;
 
     uint256 public lastClaimedAmount; // info only
     uint256 public totalClaimedAmount; // info only
@@ -85,14 +88,13 @@ contract Claimer {
         if (msg.sender != beneficiary) revert NotBeneficiary();
         if (isDeactivated == true) revert Deactivated();
 
-        uint256 time = block.timestamp;
-        if (nextClaimTime > time) revert IntervalNotComplete();
+        uint256 nextClaim = secondsToNextClaimWindow();
+        if (nextClaim > 0) revert ClaimWindowNotOpen();
 
         uint256 balancePSM = PSM.balanceOf(address(this));
         if (balancePSM == 0) revert ZeroBalance();
 
         /// Effects
-        nextClaimTime = time + claimInterval;
         lastClaimedAmount = balancePSM;
         totalClaimedAmount += balancePSM;
 
@@ -142,8 +144,16 @@ contract Claimer {
     ////////////////////////////////
     // Read Functions
     ////////////////////////////////
-    /// @notice Calculates and returns the seconds until the next claim can be executed
-    function secondsToNextClaim() external view returns (uint256 duration) {
-        duration = (nextClaimTime <= block.timestamp) ? 0 : nextClaimTime - block.timestamp;
+    /// @notice Calculates and returns the number of seconds until the next claim window
+    /// @dev Returns zero when the current claim window is active
+    function secondsToNextClaimWindow() public view returns (uint256 duration) {
+        uint256 timePassed = block.timestamp - FIRST_CLAIM_TIME;
+        uint256 cycleCounter = timePassed / CLAIM_INTERVAL;
+
+        uint256 lastClaimWindowStart = FIRST_CLAIM_TIME + CLAIM_INTERVAL * cycleCounter;
+        uint256 lastClaimWindowEnd = lastClaimWindowStart + CLAIM_WINDOW;
+        uint256 nextClaimWindowStart = FIRST_CLAIM_TIME + CLAIM_INTERVAL * (cycleCounter + 1);
+
+        duration = (block.timestamp > lastClaimWindowEnd) ? nextClaimWindowStart : 0;
     }
 }
