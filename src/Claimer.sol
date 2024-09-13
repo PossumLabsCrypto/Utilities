@@ -147,13 +147,17 @@ contract Claimer {
     /// @notice Calculates and returns the number of seconds until the next claim window
     /// @dev Returns zero when the current claim window is active
     function secondsToNextClaimWindow() public view returns (uint256 duration) {
-        uint256 timePassed = block.timestamp - FIRST_CLAIM_TIME;
+        uint256 timePassed = (block.timestamp > FIRST_CLAIM_TIME) ? block.timestamp - FIRST_CLAIM_TIME : 0;
         uint256 cycleCounter = timePassed / CLAIM_INTERVAL;
 
         uint256 lastClaimWindowStart = FIRST_CLAIM_TIME + CLAIM_INTERVAL * cycleCounter;
         uint256 lastClaimWindowEnd = lastClaimWindowStart + CLAIM_WINDOW;
         uint256 nextClaimWindowStart = FIRST_CLAIM_TIME + CLAIM_INTERVAL * (cycleCounter + 1);
 
-        duration = (block.timestamp > lastClaimWindowEnd) ? nextClaimWindowStart : 0;
+        if (timePassed > 0) {
+            duration = (block.timestamp > lastClaimWindowEnd) ? nextClaimWindowStart : 0;
+        } else {
+            duration = FIRST_CLAIM_TIME - block.timestamp;
+        }
     }
 }
