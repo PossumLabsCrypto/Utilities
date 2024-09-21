@@ -5,3 +5,8 @@ libs = ["lib"]
 remappings = ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+[rpc_endpoints]
+alchemy_arbitrum_api = "${ARB_MAINNET_URL}"
+
+[etherscan]
+arbitrumOne = { key = "${ARBISCAN_API_KEY}", url = "https://api.arbiscan.io/api" }
