@@ -194,7 +194,7 @@ if balance >= 10**23:
             transaction_data, private_key
         )
         transaction_hash = w3.eth.send_raw_transaction(
-            signed_transaction.rawTransaction
+            signed_transaction.raw_transaction
         )
         print(f"USDCE V1 Transaction sent. Hash: {transaction_hash.hex()}")
         print(f"USDCE V1 PROFIT: {(v1_reward_usdce - PSM_price):.2f}")
@@ -229,7 +229,7 @@ for portal in Portals:
                 transaction_data, private_key
             )
             transaction_hash = w3.eth.send_raw_transaction(
-                signed_transaction.rawTransaction
+                signed_transaction.raw_transaction
             )
             print(f"{name} Transaction sent. Hash: {transaction_hash.hex()}")
             print(f"{name} PROFIT: {(worth-PSM_price):.4f}")
