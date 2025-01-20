@@ -26,48 +26,33 @@ contract SimpleVesting {
         UNLOCK_TIME = _unlockTime;
     }
 
-    ////////////////////////////////
-    // Variables
-    ////////////////////////////////
     using SafeERC20 for IERC20;
 
     uint256 public immutable UNLOCK_TIME; // the time after which tokens can be withdrawn
     address public beneficiary;
 
-    ////////////////////////////////
-    // Events
-    ////////////////////////////////
     event Claimed(address token, uint256 amount);
     event BeneficiaryChanged(address oldBeneficiary, address newBeneficiary);
 
-    ////////////////////////////////
-    // Write Functions
-    ////////////////////////////////
     /// @notice Allows the current beneficiary to change the beneficiary address
     function changeBeneficiary(address _newBeneficiary) external {
-        /// Checks
         if (msg.sender != beneficiary) revert NotBeneficiary();
         if (_newBeneficiary == address(0)) revert NullAddress();
 
-        /// Effects
         beneficiary = _newBeneficiary;
 
-        /// Interactions
         emit BeneficiaryChanged(msg.sender, beneficiary);
     }
 
     /// @notice Allows the beneficiary to claim any token after the unlock time has passed
     function claim(address _token) external {
-        /// Checks
+        if (msg.sender != beneficiary) revert NotBeneficiary();
         if (block.timestamp < UNLOCK_TIME) revert TimelockActive();
 
         IERC20 token = IERC20(_token);
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) revert ZeroBalance();
 
-        /// Effects
-
-        /// Interactions
         token.safeTransfer(msg.sender, balance);
 
         emit Claimed(_token, balance);
