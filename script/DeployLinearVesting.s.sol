@@ -9,7 +9,7 @@ contract DeployLinearVesting is Script {
 
     address beneficiary = 0xAC23698691311E2cD7A3993806745c06Ccb58384;
     address vestingToken = 0x17A8541B82BF67e10B0874284b4Ae66858cb1fd5;
-    uint256 unlockPerSecond = 1762838999;
+    uint256 unlockPerSecond = 5707762557077630000; // 450M tokens over 2.5 years
 
     function run() public returns (address deployedAddress) {
         vm.startBroadcast();
