@@ -46,9 +46,11 @@ contract LinearVesting {
     }
 
     ///@notice Calculate the total amount of unlocked tokens
-    ///@return unlocked The total amount of unlocked tokens
-    function totalUnlocked() public view returns (uint256 unlocked) {
-        unlocked = (block.timestamp - start) * unlockPerSecond;
+    ///@return claimable The number of claimable vesting tokens ignoring balance constraints
+    function pendingClaim() public view returns (uint256 claimable) {
+        uint256 unlocked = (block.timestamp - start) * unlockPerSecond;
+
+        claimable = unlocked - claimed;
     }
 
     /// @notice Allow the beneficiary to claim tokens up to the current unlock limit
@@ -60,10 +62,9 @@ contract LinearVesting {
         uint256 transferAmount;
 
         if (_token == address(vestingToken)) {
-            uint256 unlocked = totalUnlocked();
             balance = vestingToken.balanceOf(address(this));
+            uint256 claimable = pendingClaim();
 
-            uint256 claimable = unlocked - claimed;
             transferAmount = (claimable > balance) ? balance : claimable;
             if (transferAmount == 0) revert ZeroTransfer();
 
