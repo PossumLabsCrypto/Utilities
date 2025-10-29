@@ -8,17 +8,19 @@ error NotBeneficiary();
 error ZeroTransfer();
 error ZeroUnlock();
 error NullAddress();
+error InvalidTime();
 
 contract LinearVesting {
-    constructor(address _beneficiary, address _vestingToken, uint256 _unlockPerSecond) {
+    constructor(address _beneficiary, address _vestingToken, uint256 _unlockPerSecond, uint256 _startTime) {
         if (_beneficiary == address(0)) revert NullAddress();
         if (_vestingToken == address(0)) revert NullAddress();
         if (_unlockPerSecond == 0) revert ZeroUnlock();
+        if (_startTime < block.timestamp) revert InvalidTime();
 
         beneficiary = _beneficiary;
         vestingToken = IERC20(_vestingToken);
         unlockPerSecond = _unlockPerSecond;
-        start = block.timestamp;
+        start = _startTime;
     }
 
     using SafeERC20 for IERC20;
@@ -53,7 +55,7 @@ contract LinearVesting {
         claimable = unlocked - claimed;
     }
 
-    /// @notice Allow the beneficiary to claim tokens up to the current unlock limit
+    /// @notice Allow the beneficiary to claim tokens up to the pending claim
     ///@dev Any token aside from the vesting token can be withdrawn without limitations
     function claim(address _token) external {
         if (msg.sender != beneficiary) revert NotBeneficiary();
