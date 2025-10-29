@@ -50,7 +50,7 @@ contract LinearVesting {
     ///@notice Calculate the total amount of unlocked tokens
     ///@return claimable The number of claimable vesting tokens ignoring balance constraints
     function pendingClaim() public view returns (uint256 claimable) {
-        uint256 unlocked = (block.timestamp - start) * unlockPerSecond;
+        uint256 unlocked = (block.timestamp < start) ? 0 : (block.timestamp - start) * unlockPerSecond;
 
         claimable = unlocked - claimed;
     }
