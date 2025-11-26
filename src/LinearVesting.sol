@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity =0.8.19;
+pragma solidity 0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -11,24 +11,27 @@ error NullAddress();
 error InvalidTime();
 
 contract LinearVesting {
-    constructor(address _beneficiary, address _vestingToken, uint256 _unlockPerSecond, uint256 _startTime) {
+    constructor(address _beneficiary, address _vestingToken, uint256 _unlockPerMonth, uint256 _startTime) {
         if (_beneficiary == address(0)) revert NullAddress();
         if (_vestingToken == address(0)) revert NullAddress();
-        if (_unlockPerSecond == 0) revert ZeroUnlock();
+        if (_unlockPerMonth == 0) revert ZeroUnlock();
         if (_startTime < block.timestamp) revert InvalidTime();
 
         beneficiary = _beneficiary;
         vestingToken = IERC20(_vestingToken);
-        unlockPerSecond = _unlockPerSecond;
+        unlockPerMonth = _unlockPerMonth;
+        unlockPerSecond = unlockPerMonth / (60 * 60 * 24 * 30);
         start = _startTime;
     }
 
     using SafeERC20 for IERC20;
 
+    IERC20 public immutable vestingToken;
+    uint256 public immutable unlockPerMonth;
+    uint256 private immutable unlockPerSecond;
+    uint256 public immutable start;
+
     address public beneficiary;
-    IERC20 public vestingToken;
-    uint256 public unlockPerSecond;
-    uint256 public start;
     uint256 public claimed;
 
     event Claimed(address token, uint256 amount);
