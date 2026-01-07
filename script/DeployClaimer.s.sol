@@ -14,10 +14,6 @@ contract DeployClaimer is Script {
     function run() public returns (address deployedAddress) {
         vm.startBroadcast();
 
-        // Configure optimizer settings
-        vm.store(address(this), bytes32("optimizer"), bytes32("true"));
-        vm.store(address(this), bytes32("optimizerRuns"), bytes32(uint256(1000)));
-
         Claimer claimer = new Claimer(beneficiary, claimInterval, firstClaimTime);
         deployedAddress = address(claimer);
 
