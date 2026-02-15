@@ -9,7 +9,6 @@ error NotOwner();
 error NullAddress();
 error ZeroBalance();
 error InvalidAmount();
-error InvalidDeadline();
 error InvalidToken();
 error InsufficientReceived();
 error DeadlineExpired();
@@ -29,7 +28,7 @@ contract LinearBondingCurve {
     using SafeERC20 for IERC20;
 
     uint256 public constant SWAP_FEE = 50; // 0.05% fee, with 4 decimals (i.e., 50 = 0.05%)
-    uint256 public constant MAX_PRICE = 49_000_000e18; // 1 ETH = 49M PSM, with 18 decimals
+    uint256 public constant MAX_PRICE = 59_000_000e18; // 1 ETH = 59M PSM, with 18 decimals
     uint256 public constant MIN_PRICE = 1_000_000e18; // 1 ETH = 1M PSM, with 18 decimals
     uint256 private immutable PRICE_RANGE; // price range of the bonding curve, with 18 decimals
     uint256 private immutable MID_PRICE; // midpoint price of the bonding curve, with 18 decimals
